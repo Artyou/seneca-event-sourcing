@@ -81,6 +81,30 @@ SourcedEntity.prototype.digest = function digest (command, data) {
   }
 }
 
+SourcedEntity.prototype.merge = function merge (snapshot) {
+  this.log$(util.format('merging snapshot %j', snapshot))
+  for (var property in snapshot) {
+    if (snapshot.hasOwnProperty(property)) {
+      var val = _.cloneDeep(snapshot[property])
+    }
+    this.mergeProperty(property, val)
+  }
+  return this
+}
+
+SourcedEntity.prototype.mergeProperty = function mergeProperty (name, value) {
+  if (mergeProperties.size &&
+      mergeProperties.has(this.__proto__.constructor.name) &&
+      mergeProperties.get(this.__proto__.constructor.name).has(name) &&
+      typeof mergeProperties.get(this.__proto__.constructor.name).get(name) === 'function') {
+    return mergeProperties.get(this.__proto__.constructor.name).get(name).call(this, value)
+  } else if (typeof value === 'object' && typeof this[name] === 'object') {
+    _.merge(this[name], value)
+  } else {
+    this[name] = value
+  }
+}
+
 SourcedEntity.prototype.replay = function replay (events, done) {
   var self = this
 
@@ -122,6 +146,13 @@ SourcedEntity.prototype.trimSnapshot = function trimSnapshot (snapshot) {
   delete snapshot._maxListeners
   delete snapshot.domain
   return snapshot
+}
+
+var mergeProperties = new Map()
+
+SourcedEntity.mergeProperty = function (type, name, fn) {
+  if (!mergeProperties.has(type.name)) mergeProperties.set(type.name, new Map())
+  mergeProperties.get(type.name).set(name, fn)
 }
 
 module.exports = function make_entity (name, seneca) {
