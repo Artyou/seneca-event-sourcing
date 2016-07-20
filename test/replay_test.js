@@ -55,6 +55,31 @@ test('should call the command when replaying', function (t) {
   })
 })
 
+test('should not enqueue events during replay', function (t) {
+  var si = SenecaInstance()
+  var entity = si.make_sourced('test')
+
+  si.add({role: 'test', cmd: 'some-command'}, function (args, done) {
+    var entity = args.entity || {}
+    entity.some = args.some
+    entity.enqueue('any-event-ed')
+    done(null, {entity: entity})
+  })
+
+  var events = [{
+    command: 'some-command',
+    data: { some: 'param' }
+  }]
+
+  entity.replay(events, function (err) {
+    if (err) return t.fail(err)
+    t.equal(entity.eventsToEmit.length, 0)
+
+    t.end()
+    si.close()
+  })
+})
+
 test('should call the command when replaying', function (t) {
   var si = SenecaInstance()
   var entity = si.make_sourced('test')
@@ -78,4 +103,3 @@ test('should call the command when replaying', function (t) {
     si.close()
   })
 })
-

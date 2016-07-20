@@ -1,6 +1,7 @@
 'use strict'
 
-const MakeSourced = require('./lib/make_sourced')
+var Common = require('./lib/common')
+var MakeSourced = require('./lib/make_sourced')
 
 module.exports = function () {
   return {
@@ -17,7 +18,7 @@ module.exports.preload = function () {
 
   function api_make_sourced () {
     var self = this
-    var args = arrayify(arguments)
+    var args = Common.arrayify(arguments)
     args.unshift(self)
     return seneca.private$.sourced_entity.make$.apply(seneca.private$.sourced_entity, args)
   }
@@ -28,8 +29,4 @@ module.exports.preload = function () {
   return {
     name: 'seneca-event-sourcing'
   }
-}
-
-function arrayify () {
-  return Array.prototype.slice.call(arguments[0], arguments[1])
 }
