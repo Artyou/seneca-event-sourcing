@@ -1,7 +1,6 @@
 'use strict'
 
 const Seneca = require('seneca')
-const _ = require('lodash')
 const Entity = require('seneca-entity')
 const EventSourcing = require('..')
 const test = require('tape')

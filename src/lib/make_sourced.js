@@ -124,10 +124,8 @@ SourcedEntity.prototype.trimSnapshot = function trimSnapshot (snapshot) {
   return snapshot
 }
 
-module.exports = function make_entity (canon, seneca) {
-  // handle_options(seneca.options().entity || {})
-  // toString_map[''] = make_toString()
-  return new SourcedEntity(canon, seneca)
+module.exports = function make_entity (name, seneca) {
+  return new SourcedEntity(name, seneca)
 }
 
 module.exports.SourcedEntity = SourcedEntity
