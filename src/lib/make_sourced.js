@@ -1,6 +1,7 @@
 'use strict'
 
 var Common = require('./common')
+var async = require('async')
 var _ = require('lodash')
 var util = require('util')
 
@@ -17,7 +18,6 @@ function SourcedEntity (name, seneca) {
   var self = this
 
   self.log$ = function () {
-    // use this, as make$ will have changed seneca ref
     this.private$.seneca.log.apply(this, arguments)
   }
 
@@ -30,9 +30,9 @@ function SourcedEntity (name, seneca) {
   this.newEvents = []
 
   this.eventsToEmit = []
-  // this.replaying = false
-  // this.snapshotVersion = 0
-  // this.timestamp = Date.now()
+  this.replaying = false
+  this.snapshotVersion = 0
+  this.timestamp = Date.now()
   this.version = 0
   // var args = Array.prototype.slice.call(arguments)
   // if (args[0]) {
@@ -67,39 +67,45 @@ SourcedEntity.prototype.enqueue = function enqueue () {
   }
 }
 
-SourcedEntity.prototype.digest = function digest (method, data) {
+SourcedEntity.prototype.digest = function digest (command, data) {
   if (!this.replaying) {
-    // this.timestamp = Date.now()
+    this.timestamp = Date.now()
     this.version = this.version + 1
-    this.log$(util.format('digesting event \'%s\' w/ data %j', method, data))
+    this.log$(util.format('digesting command \'%s\' w/ data %j', command, data))
     this.newEvents.push({
-      method: util.format('role:%s,event:%s', this.private$.entity_name, method),
+      command: command,
       data: data,
-      //timestamp: this.timestamp,
+      timestamp: this.timestamp,
       version: this.version
     })
   }
 }
 
-SourcedEntity.prototype.replay = function replay (events) {
+SourcedEntity.prototype.replay = function replay (events, done) {
   var self = this
 
   this.replaying = true
 
   self.log$(util.format('replaying events %j', events))
-
-  events.forEach(function (event) {
-    if (self[event.method]) {
-      self[event.method](event.data)
-      self.version = event.version
-    } else {
-      var errorMessage = util.format('method \'%s\' does not exist on model \'SourcedEntity\'', event.method)
-      self.log$(errorMessage)
-      throw new EntityError(errorMessage)
+  var fns = _.map(events, function (event) {
+    return function (callback) {
+      var pattern = util.format('role:%s,cmd:%s', self.private$.entity_name, event.command)
+      var data = _.merge({fatal$: false, entity: self}, event.data)
+      self.private$.seneca.act(pattern, data, function (err) {
+        if (err) return callback(err)
+        self.version = event.version
+        return callback(null)
+      })
     }
   })
-
-  this.replaying = false
+  async.series(fns, function (err) {
+    if (err) {
+      self.log$(err)
+      return done(err)
+    }
+    self.replaying = false
+    return done(null, {entity: self})
+  })
 }
 
 SourcedEntity.prototype.snapshot = function snapshot () {

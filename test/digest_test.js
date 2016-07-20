@@ -1,6 +1,7 @@
 'use strict'
 
 const Seneca = require('seneca')
+const _ = require('lodash')
 const Entity = require('seneca-entity')
 const EventSourcing = require('..')
 const test = require('tape')
@@ -15,39 +16,50 @@ var SenecaInstance = function () {
     plugins: [Entity, EventSourcing]
   })
 
+  seneca.add('role:test,cmd:some-command', function (args, done) {
+    var entity = args.entity || seneca.make_sourced('test')
+    entity.property2 = args.data
+    entity.digest('some-command', args.data)
+    done(null, {entity: entity})
+  })
+
   return seneca
 }
 
-test('should wrap param object with method matching calling method name and add to array of newEvents', function (t) {
+test('should wrap param object with command matching calling command name and add to array of newEvents', function (t) {
   var si = SenecaInstance()
-  var entity = si.make_sourced('test')
 
-  var data = { test: 'data' }
-
-  entity.digest('some-event', data)
-  t.equal(entity.newEvents.length, 1)
-  t.equal(entity.newEvents[0].method, 'role:test,event:some-event')
-  t.equal(entity.newEvents[0].data, data)
-  t.end()
-  si.close()
+  var data = {data: {test: 'data'}}
+  si.act('role:test,cmd:some-command', data, function (err, response) {
+    if (err) return t.fail(err)
+    t.equal(response.entity.newEvents.length, 1)
+    t.equal(response.entity.newEvents[0].command, 'some-command')
+    t.equal(response.entity.newEvents[0].data, data.data)
+    t.true(response.entity.newEvents[0].timestamp, 'show have a timestamp')
+    t.end()
+    si.close()
+  })
 })
 
 test('should have versions 1 and 2 for two consecutively digested events', function (t) {
   var si = SenecaInstance()
-  var entity = si.make_sourced('test')
 
-  var data = { test: 'data' }
-  var data2 = {test: 'data2'}
+  var data = {data: {test: 'data'}}
+  var data2 = {data: {test: 'data2'}}
 
-  entity.digest('some-event', data)
-  entity.digest('some-event', data2)
-
-  t.equal(entity.newEvents.length, 2)
-  t.equal(entity.newEvents[0].method, 'role:test,event:some-event')
-  t.equal(entity.newEvents[0].data, data)
-  t.equal(entity.newEvents[1].method, 'role:test,event:some-event')
-  t.equal(entity.newEvents[1].data, data2)
-  t.equal(entity.version, 2)
-  t.end()
-  si.close()
+  si.act('role:test,cmd:some-command', data, function (err, response1) {
+    if (err) return t.fail(err)
+    data2.entity = response1.entity
+    si.act('role:test,cmd:some-command', data2, function (err, response2) {
+      if (err) return t.fail(err)
+      t.equal(response2.entity.newEvents.length, 2)
+      t.equal(response2.entity.newEvents[0].command, 'some-command')
+      t.equal(response2.entity.newEvents[0].data, data.data)
+      t.equal(response2.entity.newEvents[1].command, 'some-command')
+      t.equal(response2.entity.newEvents[1].data, data2.data)
+      t.equal(response2.entity.version, 2)
+      t.end()
+      si.close()
+    })
+  })
 })
