@@ -14,7 +14,7 @@ util.inherits(EntityError, Error)
 
 EntityError.prototype.name = 'EntityError'
 
-function SourcedEntity (name, seneca) {
+function SourcedEntity (name, snapshot, events, seneca) {
   var self = this
 
   self.log$ = function () {
@@ -27,6 +27,9 @@ function SourcedEntity (name, seneca) {
 
   private$.entity_name = name
 
+  private$.events_repo = seneca.make('events', name)
+  private$.snapshots_repo = seneca.make('snapshots', name)
+
   this.newEvents = []
 
   this.eventsToEmit = []
@@ -34,15 +37,13 @@ function SourcedEntity (name, seneca) {
   this.snapshotVersion = 0
   this.timestamp = Date.now()
   this.version = 0
-  // var args = Array.prototype.slice.call(arguments)
-  // if (args[0]) {
-  //   var snapshot = args[0]
-  //   this.merge(snapshot)
-  // }
-  // if (args[1]) {
-  //   var evnts = args[1]
-  //   this.replay(evnts)
-  // }
+
+  if (snapshot) {
+    this.merge(snapshot)
+  }
+  if (events) {
+    this.replay(events)
+  }
 }
 
 SourcedEntity.prototype.make$ = function () {
@@ -57,8 +58,23 @@ SourcedEntity.prototype.make$ = function () {
     throw new EntityError('Entity name should be provided.')
   }
 
-  var entity = new SourcedEntity(args[0], self.private$.seneca)
+  if (args[1]) {
+    var snapshot = args[1]
+  }
+
+  if (args[2]) {
+    var events = args[2]
+  }
+
+  var entity = new SourcedEntity(args[0], snapshot, events, self.private$.seneca)
   return entity
+}
+
+SourcedEntity.prototype.emit = function emit () {
+  if (!this.replaying) {
+    var args = Common.arrayify(arguments)
+    this.private$.seneca.act({role: this.private$.entity_name, event: args.shift(), data: args})
+  }
 }
 
 SourcedEntity.prototype.enqueue = function enqueue () {
@@ -156,7 +172,7 @@ SourcedEntity.mergeProperty = function (type, name, fn) {
 }
 
 module.exports = function make_entity (name, seneca) {
-  return new SourcedEntity(name, seneca)
+  return new SourcedEntity(name, null, null, seneca)
 }
 
 module.exports.SourcedEntity = SourcedEntity

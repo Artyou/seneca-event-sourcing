@@ -29,22 +29,6 @@ function TestEntity (si) {
   return entity
 }
 
-test('should throw an entity error with name of model when attempting to replay a pattern an entity not handled', function (t) {
-  var si = SenecaInstance()
-  var entity = si.make_sourced('test')
-
-  var events = [{
-    command: 'some-command',
-    data: { some: 'param' }
-  }]
-  entity.replay(events, function (err) {
-    t.true(/No matching action pattern found for/.test(err))
-
-    t.end()
-    si.close()
-  })
-})
-
 test('should merge a snapshot into the current snapshot, overwriting any common properties', function (t) {
   var si = SenecaInstance()
   var entity = TestEntity(si)

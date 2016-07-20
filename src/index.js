@@ -1,6 +1,7 @@
 'use strict'
 
 var Common = require('./lib/common')
+var Store = require('./lib/store')
 var MakeSourced = require('./lib/make_sourced')
 
 module.exports = function () {
@@ -25,6 +26,10 @@ module.exports.preload = function () {
 
   seneca.decorate('make_sourced$', api_make_sourced)
   seneca.decorate('make_sourced', api_make_sourced)
+
+  if (!seneca.eventstore || !seneca.eventstore.init) {
+    seneca.decorate('eventstore', Store())
+  }
 
   return {
     name: 'seneca-event-sourcing'
