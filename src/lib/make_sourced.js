@@ -27,9 +27,6 @@ function SourcedEntity (name, snapshot, events, seneca) {
 
   private$.entity_name = name
 
-  private$.events_repo = seneca.make('events', name)
-  private$.snapshots_repo = seneca.make('snapshots', name)
-
   this.newEvents = []
 
   this.eventsToEmit = []
