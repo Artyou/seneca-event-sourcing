@@ -1,6 +1,6 @@
 {
   "name": "seneca-event-sourcing",
-  "version": "0.2.0-dev",
+  "version": "0.2.1-dev",
   "description": "A Seneca.js plugin that provides helpers to work with CQRS/Event Sourcing",
   "main": "src/index.js",
   "scripts": {
