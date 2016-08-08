@@ -18,3 +18,5 @@ module.exports.preload = function () {
     name: 'seneca-event-sourcing'
   }
 }
+
+module.exports.SourcedEntity = SourcedEntity
