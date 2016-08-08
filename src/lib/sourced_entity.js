@@ -13,7 +13,7 @@ Util.inherits(SourcedEntity, Entity)
 SourcedEntity.prototype.emit = function emit () {
   if (!this.replaying) {
     var args = Common.arrayify(arguments)
-    var pattern = {role: 'events'}
+    var pattern = {role: 'events', fatal$: false}
     var event = args.shift()
     if (event.indexOf('.') === -1) throw Error('Events should be queued in object.event format.')
 
