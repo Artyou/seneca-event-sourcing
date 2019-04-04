@@ -1,6 +1,6 @@
 {
   "name": "seneca-event-sourcing",
-  "version": "0.2.1-dev",
+  "version": "0.3.0",
   "description": "A Seneca.js plugin that provides helpers to work with CQRS/Event Sourcing",
   "main": "src/index.js",
   "scripts": {
@@ -25,9 +25,7 @@
   },
   "homepage": "https://github.com/Artyou/seneca-event-sourcing#readme",
   "dependencies": {
-    "async": "^2.0.0",
-    "lodash": "^4.13.1",
-    "sourced": "^0.1.1"
+    "sourced": "^2.0.4"
   },
   "devDependencies": {
     "eslint": "^2.12.0",
